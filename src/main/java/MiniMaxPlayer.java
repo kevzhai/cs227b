@@ -11,14 +11,13 @@ import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
-import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
-public class MyGamer extends StateMachineGamer {
+public class MiniMaxPlayer extends StateMachineGamer {
 
 	@Override
 	public StateMachine getInitialStateMachine() {
 		// TODO Auto-generated method stub
-		return new ProverStateMachine();
+		return null;
 	}
 
 	@Override
@@ -69,7 +68,7 @@ public class MyGamer extends StateMachineGamer {
 	@Override
 	public String getName() {
 		// TODO Auto-generated method stub
-		return "Kilimanjaro";
+		return "Kilimanjaro MiniMax";
 	}
 
 }
