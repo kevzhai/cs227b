@@ -1,21 +1,22 @@
 package org.ggp.base.player.gamer.statemachine.assignment2;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.ggp.base.player.gamer.event.GamerSelectedMoveEvent;
 import org.ggp.base.player.gamer.statemachine.sample.SampleGamer;
+import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
+import org.ggp.base.util.statemachine.Role;
+import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 /**
- * SampleLegalGamer is a minimal gamer which always plays the first
- * legal move it identifies, regardless of the state of the game.
- *
- * For your first players, you should extend the class SampleGamer
- * The only function that you are required to override is :
- * public Move stateMachineSelectMove(long timeout)
+ * CompulsiveDeliberationGamer searches the current game tree and
+ * selects the move leading to the best terminal state.
  *
  */
 public final class CompulsiveDeliberationPlayer extends SampleGamer
@@ -32,16 +33,28 @@ public final class CompulsiveDeliberationPlayer extends SampleGamer
 		// We get the current start time
 		long start = System.currentTimeMillis();
 
-		/**
-		 * We put in memory the list of legal moves from the
-		 * current state. The goal of every stateMachineSelectMove()
-		 * is to return one of these moves. The choice of which
-		 * Move to play is the goal of GGP.
-		 */
-		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
 
-		// SampleLegalGamer is very simple : it picks the first legal move
-		Move selection = moves.get(0);
+		// These get reused a lot, so store them
+		MachineState currentState = getCurrentState();
+		StateMachine theMachine = getStateMachine();
+
+		List<Move> moves = theMachine.getLegalMoves(currentState, getRole());
+		Move bestMove = moves.get(0);
+		int bestScore = 0;
+		for(int i = 0; i< moves.size(); i++)
+		{
+			List<Move> currentMove = new ArrayList<Move>(Arrays.asList(moves.get(i)));
+			MachineState nextState = theMachine.getNextState(currentState, currentMove);
+
+			int result = maxScore(nextState, getRole());
+			if(result == 100)
+				return moves.get(i);
+			if(result > bestScore)
+			{
+				bestScore = result;
+				bestMove = moves.get(i);
+			}
+		}
 
 		// We get the end time
 		// It is mandatory that stop<timeout
@@ -53,7 +66,30 @@ public final class CompulsiveDeliberationPlayer extends SampleGamer
 		 * moves, selection, stop and start defined in the same way as
 		 * this example, and copy-paste these two lines in your player
 		 */
-		notifyObservers(new GamerSelectedMoveEvent(moves, selection, stop - start));
-		return selection;
+		notifyObservers(new GamerSelectedMoveEvent(moves, bestMove, stop - start));
+		return bestMove;
+	}
+
+	// Returns the maximum possible score from the given state and role
+	public int maxScore(MachineState state, Role role) throws TransitionDefinitionException, GoalDefinitionException, MoveDefinitionException
+	{
+		StateMachine theMachine = getStateMachine();
+
+		if(theMachine.isTerminal(state))
+			return theMachine.getGoal(state, role);
+		List<Move> moves = theMachine.getLegalMoves(state, role);
+		int bestScore = 0;
+		for(int i = 0; i< moves.size(); i++)
+		{
+			List<Move> currentMove = new ArrayList<Move>(Arrays.asList(moves.get(i)));
+			MachineState nextState = theMachine.getNextState(state, currentMove);
+
+			int result = maxScore(nextState, role);
+			if(result == 100)
+				return result;
+			if(result > bestScore)
+				bestScore = result;
+		}
+		return bestScore;
 	}
 }
