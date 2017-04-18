@@ -48,7 +48,10 @@ public final class CompulsiveDeliberationPlayer extends SampleGamer
 
 			int result = maxScore(nextState, getRole());
 			if(result == 100)
-				return moves.get(i);
+			{
+				bestMove = moves.get(i);
+				break;
+			}
 			if(result > bestScore)
 			{
 				bestScore = result;
