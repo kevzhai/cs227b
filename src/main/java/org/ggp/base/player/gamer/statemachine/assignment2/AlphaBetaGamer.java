@@ -35,23 +35,6 @@ public class AlphaBetaGamer extends SampleGamer {
 	}
 
 	private int getMinScore(Role role, Move move, MachineState state, int alpha, int beta) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
-	   /* var opponent = findopponent(role,game);
-		  var actions = findlegals(opponent,state,game);
-		  for (var i=0; i<actions.length; i++) {
-		  	   var move;
-		       if (role==roles[0]) {
-		          move = [action,actions[i]]}
-		       else {
-		          move = [actions[i],action]
-		       }
-		       var newstate = findnext(move,state,game);
-		       var result = maxscore(role,newstate,alpha,beta);
-		       beta = min(beta,result);
-		       if (beta<=alpha) then {
-		       	  return alpha
-		       }
-		   };
-		   return beta */
 		List<List<Move>> jointMovesList = getStateMachine().getLegalJointMoves(state, role, move);
 		for (int i = 0; i < jointMovesList.size(); i++) {
 			List<Move> jointMoves = jointMovesList.get(i);
@@ -64,18 +47,6 @@ public class AlphaBetaGamer extends SampleGamer {
 	}
 
 	private int getMaxScore(Role role, MachineState state, int alpha, int beta) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
-		/* if (findterminalp(state,game)) {
-				return findreward(role,state,game)};
-		  		var actions = findlegals(role,state,game);
-		  		for (var i=0; i<actions.length; i++) {
-		      		var result = minscore(role,actions[i],state,alpha,beta);
-		       		alpha = max(alpha,result);
-		       		if (alpha>=beta) then {
-		       			return beta
-		       		}
-		       	};
-		  return alpha */
-
 		if (getStateMachine().isTerminal(state)) return getStateMachine().getGoal(state, role);
 		List<Move> moves = getStateMachine().getLegalMoves(state, role);
 		for (Move move: moves) {
