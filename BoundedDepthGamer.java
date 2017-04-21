@@ -22,6 +22,12 @@ public class BoundedDepthGamer extends SampleGamer {
 	Logger logger = Logger.getLogger(getClass().getSimpleName());
 
 	@Override
+	//Play a meta game to decide on some initial parameters
+	public void stateMachineMetaGame(long timeout) throws MoveDefinitionException, TransitionDefinitionException, GoalDefinitionException {
+		limit = 6;
+	}
+
+	@Override
 	public Move stateMachineSelectMove(long timeout)
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		// We get the current start time
