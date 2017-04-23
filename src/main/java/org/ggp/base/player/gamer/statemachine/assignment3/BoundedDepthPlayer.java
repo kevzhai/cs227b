@@ -19,7 +19,7 @@ public class BoundedDepthPlayer extends SampleGamer {
 
 	protected int limit = 10;
 	protected long finishBy = 0;
-	Logger logger = Logger.getLogger(getClass().getSimpleName());
+	protected Logger logger = Logger.getLogger(getClass().getSimpleName());
 
 	@Override
 	public Move stateMachineSelectMove(long timeout)
