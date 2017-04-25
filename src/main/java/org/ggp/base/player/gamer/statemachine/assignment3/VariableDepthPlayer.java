@@ -37,6 +37,7 @@ public class VariableDepthPlayer extends ProximityPlayer {
 		weightMap.put("timeForTerminal", 0.2); //The portion of time spent on finding terminal states
 		heuristics.put("useSimilarityProximity", true); //Use either the state's goal value or mix it with a similarity to terminal sates
 		heuristics.put("isCoop", false); //Whether we want to hurt our opponent's score or not.
+		modelChoices.put("maxTerminalStates", 10);
 
 		//Default Game parameters
 		List<Role> roles = getStateMachine().getRoles();
@@ -87,7 +88,6 @@ public class VariableDepthPlayer extends ProximityPlayer {
 			// TODO: do something productive
 			// Right now rechecks the best limit to use
 			// Only use as much time as would normally be available after finding terminal states
-			logger.log(Level.INFO, weightMap+"");
 			finishBy = (long) (start + (finishBy-start)*(1-weightMap.get("timeForTerminal")));
 			modelChoices.put("limit", findCurrentLimit(timeout, finishBy));
 		}

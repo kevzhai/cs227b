@@ -44,6 +44,7 @@ public class ProximityPlayer extends BoundedDepthPlayer {
 		weightMap.put("timeForTerminal", 0.2); //The portion of time spent on finding terminal states
 		heuristics.put("useSimilarityProximity", true); //Use either the state's goal value or mix it with a similarity to terminal sates
 		heuristics.put("isCoop", false); //Whether we want to hurt our opponent's score or not.
+		modelChoices.put("maxTerminalStates", 10);
 
 		//Default Game parameters
 		List<Role> roles = getStateMachine().getRoles();
@@ -109,11 +110,18 @@ public class ProximityPlayer extends BoundedDepthPlayer {
 	// TODO: Speed this up somehow.
 	protected void findTerminalStates(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		int counter = 0;
-		int newStatesMax = 10; //Maximum number of new states we would look for
+		int newStatesMax = modelChoices.get("maxTerminalStates"); //Maximum number of new states we would look for
 		if(System.currentTimeMillis() < timeout && heuristics.get("useSimilarityProximity")) {
 			int[] depth = new int[1];
 			List<Role> roles = getStateMachine().getRoles();
 
+			//First initialize the values for each role
+			for(Role role: roles) {
+				//Reset the terminal states we found last time
+				perfectStates.put(role, new ArrayList<MachineState>());
+				goodStates.put(role, new ArrayList<MachineState>());
+				goodScores.put(role, new ArrayList<Integer>());
+			}
 
 			MachineState currentState = getCurrentState();
 			while(System.currentTimeMillis() < timeout) {
@@ -122,13 +130,8 @@ public class ProximityPlayer extends BoundedDepthPlayer {
 				HashMap<Role, Integer> playerScores = new HashMap<Role, Integer> ();
 				int scoreAvg = 0;
 
-				//First initialize the values for each role
+				//Find scores for the current terminal state
 				for(Role role: roles) {
-					//Reset the terminal states we found last time
-					perfectStates.put(role, new ArrayList<MachineState>());
-					goodStates.put(role, new ArrayList<MachineState>());
-					goodScores.put(role, new ArrayList<Integer>());
-
 					int currentScore = getStateMachine().getGoal(finalState, role);
 					scoreAvg += currentScore;
 					playerScores.put(role, currentScore);
@@ -136,13 +139,12 @@ public class ProximityPlayer extends BoundedDepthPlayer {
 				scoreAvg /= roles.size();
 
 				//Now add in good states for each role
-				boolean haveEnough = true; //This will remain true unless we added the current terminal state somewhere
+				boolean haveEnough = true; //This will remain true unless we find a role which does not have enough states
 				for(Role role: roles) {
 					if(playerScores.get(role) == 100 && perfectStates.get(role).size() < newStatesMax) {
 						ArrayList<MachineState> currentStates = perfectStates.get(role);
 						currentStates.add(finalState);
 						perfectStates.put(role, currentStates);
-						haveEnough = false;
 
 					} else if(playerScores.get(role) >= 50 && playerScores.get(role) >= scoreAvg && goodStates.get(role).size() < newStatesMax){
 						ArrayList<MachineState> currentStates = goodStates.get(role);
@@ -152,15 +154,21 @@ public class ProximityPlayer extends BoundedDepthPlayer {
 						ArrayList<Integer> currentScores = goodScores.get(role);
 						currentScores.add(playerScores.get(role));
 						goodScores.put(role, currentScores);
-						haveEnough = false;
 					}
+					if(perfectStates.get(role).size() < newStatesMax || goodStates.get(role).size() < newStatesMax)
+						haveEnough = false;
 				}
 				if(haveEnough)
 					break;
 				counter++;
 			}
+
+			//Print final sizes
+			for(Role role: roles)
+				logger.log(Level.INFO, String.format("Role %s found (perfect, good) states = (%d, %d)",
+						role.toString(), perfectStates.get(role).size(), goodStates.get(role).size()));
+			logger.log(Level.INFO, String.format("States Checked: %d", counter));
 		}
-		logger.log(Level.INFO, String.format("States Checked: %d", counter));
 	}
 
 	//F-1 Score
