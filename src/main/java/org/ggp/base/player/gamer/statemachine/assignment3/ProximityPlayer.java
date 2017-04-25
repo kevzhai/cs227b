@@ -118,6 +118,7 @@ public class ProximityPlayer extends BoundedDepthPlayer {
 			//First initialize the values for each role
 			for(Role role: roles) {
 				//Reset the terminal states we found last time
+				//TODO: Maybe keep some states which are still "similar"/relevant
 				perfectStates.put(role, new ArrayList<MachineState>());
 				goodStates.put(role, new ArrayList<MachineState>());
 				goodScores.put(role, new ArrayList<Integer>());

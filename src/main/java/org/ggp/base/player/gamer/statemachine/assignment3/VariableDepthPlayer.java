@@ -23,6 +23,17 @@ public class VariableDepthPlayer extends ProximityPlayer {
 		finishBy = timeout - 1000; //Leave one second left
 
 		setupPlayer();
+
+		List<Role> roles = getStateMachine().getRoles();
+		//First initialize the values for each role
+		for(Role role: roles) {
+			//Reset the terminal states we found last time
+			//TODO: Maybe keep some states which are still "similar"/relevant
+			perfectStates.put(role, new ArrayList<MachineState>());
+			goodStates.put(role, new ArrayList<MachineState>());
+			goodScores.put(role, new ArrayList<Integer>());
+		}
+
 		//Don't use more time than the play clock allows for
 		modelChoices.put("limit", findCurrentLimit(timeout, Math.min(finishBy,
 				System.currentTimeMillis() + getMatch().getPlayClock()*1000 - 2000)));
@@ -137,10 +148,10 @@ public class VariableDepthPlayer extends ProximityPlayer {
 						// Checking the goal and evaluation here is not stored, it is only to mimic what actually happens
 						if(!getStateMachine().isTerminal(nextState)){
 							stateQueue.add(nextState);
-							getStateMachine().getGoal(nextState, role);
+							stateEvaluation(role, nextState);
 						}
 						else
-							stateEvaluation(role, nextState);
+							getStateMachine().getGoal(nextState, role);
 					}
 				}
 			}
