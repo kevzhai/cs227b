@@ -2,6 +2,7 @@ package org.ggp.base.player.gamer.statemachine.assignment3;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,7 +18,7 @@ import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 
 public class BoundedDepthPlayer extends SampleGamer {
 
-	protected int limit = 10;
+	protected HashMap<String, Integer> modelChoices = new HashMap<String, Integer>(); // A map of heuristic weights
 	protected long finishBy = 0;
 	protected Logger logger = Logger.getLogger(getClass().getSimpleName());
 
@@ -26,7 +27,10 @@ public class BoundedDepthPlayer extends SampleGamer {
 			throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		// We get the current start time
 		long start = System.currentTimeMillis();
-		finishBy = timeout - 2000; //Finish with 2 seconds remaining
+		//Finish with 2 seconds remaining
+		finishBy = timeout - 2000;
+
+		modelChoices.put("limit", 6);
 
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
 		moves = new ArrayList<Move>(moves);
@@ -38,7 +42,9 @@ public class BoundedDepthPlayer extends SampleGamer {
 			for (Move move: moves) {
 				if (System.currentTimeMillis() > finishBy)
 			        break;
-				int result = getMinScore(getRole(), move, getCurrentState(), 0, 100, 1);
+
+				// Store the current best move
+				int result = getMinScore(getRole(), move, getCurrentState(), 0, 100, 0);
 				if(result == 100) {
 					bestMove = move;
 					break;
@@ -50,22 +56,16 @@ public class BoundedDepthPlayer extends SampleGamer {
 			}
 
 		long stop = System.currentTimeMillis();
-		notifyObservers(new GamerSelectedMoveEvent(moves, bestMove, stop - start));
-
-		if( stop > finishBy ) { //decrease our depth limit if we took too long
-			logger.log(Level.WARNING, "Ran out of time! \n\tBest score: " + bestScore);
-			//limit = Math.max(2, limit - 1);
-			//logger.log(Level.INFO, String.format("Limit is now: %d", limit));
-		}
-		else if (moves.size() > 1){ //Time used is not important if we didn't compute anything
-			double timeUsed = (stop-start)*100.0/(finishBy-start); //A percentage of the time used
-			logger.log(Level.INFO, String.format("Time used: %f. \n Best score: %d", timeUsed, bestScore));
-			if (timeUsed < 50) { //increase our depth limit if we were quick
-				//limit++;
-				//logger.log(Level.INFO, String.format("Limit is now: %d", limit));
+		if(moves.size() > 1){ //If we didn't have to look through moves, these values don't mean much.
+			if( stop > finishBy  )
+				logger.log(Level.WARNING, "Ran out of time! \n\tBest score: " + bestScore);
+			else {
+				int timeUsed = (int) ((stop-start)*100.0/(finishBy-start)); //A percentage of the time used
+				logger.log(Level.INFO, String.format("Time used: %d. \n Best score: %d", timeUsed, bestScore));
 			}
 		}
 
+		notifyObservers(new GamerSelectedMoveEvent(moves, bestMove, stop - start));
 		return bestMove;
 	}
 
@@ -100,11 +100,11 @@ public class BoundedDepthPlayer extends SampleGamer {
 	// This function is for adaptively determining the depth limit based on state.
 	// Right now it keeps the default limit.
 	protected boolean depthLimit(Role role, MachineState state, int level) {
-		return level >= limit;
+		return level >= modelChoices.get("limit");
 	}
 
 	// Evaluate the current state. Add in some heuristics here.
-	protected int stateEvaluation(Role role, MachineState state) throws MoveDefinitionException, GoalDefinitionException {
+	protected int stateEvaluation(Role role, MachineState state) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 		return 0;
 	}
 
