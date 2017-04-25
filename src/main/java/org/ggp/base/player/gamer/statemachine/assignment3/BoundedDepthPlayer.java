@@ -12,6 +12,7 @@ import org.ggp.base.player.gamer.statemachine.sample.SampleGamer;
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
+import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
@@ -21,6 +22,7 @@ public class BoundedDepthPlayer extends SampleGamer {
 	protected HashMap<String, Integer> modelChoices = new HashMap<String, Integer>(); // A map of heuristic weights
 	protected long finishBy = 0;
 	protected Logger logger = Logger.getLogger(getClass().getSimpleName());
+	protected StateMachine theMachine = getStateMachine();
 
 	@Override
 	public Move stateMachineSelectMove(long timeout)
@@ -30,7 +32,7 @@ public class BoundedDepthPlayer extends SampleGamer {
 		//Finish with 2 seconds remaining
 		finishBy = timeout - 2000;
 
-		modelChoices.put("limit", 6);
+		modelChoices.put("limit", 6); //The deepest depth for the game tree
 
 		List<Move> moves = getStateMachine().getLegalMoves(getCurrentState(), getRole());
 		moves = new ArrayList<Move>(moves);
