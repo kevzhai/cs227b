@@ -107,7 +107,6 @@ public class ProximityPlayer extends BoundedDepthPlayer {
 		return bestMove;
 	}
 
-	// TODO: Speed this up somehow.
 	protected void findTerminalStates(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
 		int counter = 0;
 		int newStatesMax = modelChoices.get("maxTerminalStates"); //Maximum number of new states we would look for
@@ -118,7 +117,6 @@ public class ProximityPlayer extends BoundedDepthPlayer {
 			//First initialize the values for each role
 			for(Role role: roles) {
 				//Reset the terminal states we found last time
-				//TODO: Maybe keep some states which are still "similar"/relevant
 				perfectStates.put(role, new ArrayList<MachineState>());
 				goodStates.put(role, new ArrayList<MachineState>());
 				goodScores.put(role, new ArrayList<Integer>());
@@ -186,8 +184,6 @@ public class ProximityPlayer extends BoundedDepthPlayer {
 	}
 
 	//Returns average proximity value of opponents
-	//TODO: Perhaps try changing average to max
-	//TODO: similarity value is calculated multiple times right now (same for each opponent).
 	protected int opponentProximityValue(Role role, MachineState state, boolean isCoop) throws MoveDefinitionException, GoalDefinitionException {
 
 		int score = 0;
@@ -208,7 +204,6 @@ public class ProximityPlayer extends BoundedDepthPlayer {
 	}
 
 	// Returns the current goal value
-	// TODO: Perhaps make this more complicated later
 	protected int proximityValue(Role role, MachineState state) throws MoveDefinitionException, GoalDefinitionException {
 		int score = getStateMachine().getGoal(state, role);
 		int similarityScore = 0;

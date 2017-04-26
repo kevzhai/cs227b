@@ -28,7 +28,6 @@ public class VariableDepthPlayer extends ProximityPlayer {
 		//First initialize the values for each role
 		for(Role role: roles) {
 			//Reset the terminal states we found last time
-			//TODO: Maybe keep some states which are still "similar"/relevant
 			perfectStates.put(role, new ArrayList<MachineState>());
 			goodStates.put(role, new ArrayList<MachineState>());
 			goodScores.put(role, new ArrayList<Integer>());
@@ -96,7 +95,6 @@ public class VariableDepthPlayer extends ProximityPlayer {
 				}
 			}
 		}else {
-			// TODO: do something productive
 			// Right now rechecks the best limit to use
 			// Only use as much time as would normally be available after finding terminal states
 			finishBy = (long) (start + (finishBy-start)*(1-weightMap.get("timeForTerminal")));
