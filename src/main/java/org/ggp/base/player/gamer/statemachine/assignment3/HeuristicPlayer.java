@@ -3,9 +3,9 @@ package org.ggp.base.player.gamer.statemachine.assignment3;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -14,6 +14,7 @@ import org.ggp.base.util.gdl.grammar.GdlSentence;
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.Role;
+import org.ggp.base.util.statemachine.StateMachine;
 import org.ggp.base.util.statemachine.exceptions.GoalDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
@@ -251,14 +252,26 @@ public class HeuristicPlayer extends BoundedDepthPlayer {
 	protected int stateEvaluation(Role role, MachineState state) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
 
 		// Self Values
-		int movementScore = movementValue(role, state, heuristics.get("useFocus"), modelChoices.get("steps"));
-		int proximityScore = proximityValue(role, state);
-		int similarityScore = similarityValue(role, state);
+		int movementScore = 0;
+		if( weightMap.get("movement") > 0.01)
+			movementScore = movementValue(role, state, heuristics.get("useFocus"), modelChoices.get("steps"));
+		int proximityScore = 0;
+		if( weightMap.get("proximity") > 0.01)
+			proximityScore = proximityValue(role, state);
+		int similarityScore = 0;
+		if( weightMap.get("similarityProximity") > 0.01)
+			similarityScore = similarityValue(role, state);
 
 		// Opponent Values
-		int opponentMovementScore = opponentMovementValue(role, state, heuristics.get("useOppFocus"), modelChoices.get("steps"));
-		int opponentProximityScore = opponentProximityValue(role, state, heuristics.get("goodOppProx"));
-		int oppSimilarityScore = opponentSimilarityValue(role, state, heuristics.get("goodOppSim"));
+		int opponentMovementScore = 0;
+		if( weightMap.get("oppMovement") > 0.01)
+			opponentMovementScore = opponentMovementValue(role, state, heuristics.get("useOppFocus"), modelChoices.get("steps"));
+		int opponentProximityScore = 0;
+		if( weightMap.get("oppProximity") > 0.01)
+			opponentProximityScore = opponentProximityValue(role, state, heuristics.get("goodOppProx"));
+		int oppSimilarityScore = 0;
+		if( weightMap.get("oppSimilarityProximity") > 0.01)
+			oppSimilarityScore = opponentSimilarityValue(role, state, heuristics.get("goodOppSim"));
 
 		// Weighted final value
 		return (int)(weightMap.get("proximity")*proximityScore + weightMap.get("movement")*movementScore +
@@ -281,17 +294,17 @@ public class HeuristicPlayer extends BoundedDepthPlayer {
 				goodStates.put(role, new ArrayList<MachineState>());
 				goodScores.put(role, new ArrayList<Integer>());
 			}
-
+			StateMachine theMachine = getStateMachine();
 			MachineState currentState = getCurrentState();
 			while(System.currentTimeMillis() < timeout) {
-				MachineState finalState = getStateMachine().performDepthCharge(currentState, depth); //Find a random terminal state
+				MachineState finalState = theMachine.performDepthCharge(currentState, depth); //Find a random terminal state
 
 				HashMap<Role, Integer> playerScores = new HashMap<Role, Integer> ();
 				int scoreAvg = 0;
 
 				//Find scores for the current terminal state
 				for(Role role: roles) {
-					int currentScore = getStateMachine().getGoal(finalState, role);
+					int currentScore = theMachine.getGoal(finalState, role);
 					scoreAvg += currentScore;
 					playerScores.put(role, currentScore);
 				}
@@ -333,8 +346,8 @@ public class HeuristicPlayer extends BoundedDepthPlayer {
 	//F-1 Score as a measure of similarity
 	protected int similarity(MachineState state1, MachineState state2) {
 
-		Set<GdlSentence> set1 = state1.getContents();
-		Set<GdlSentence> set2 = state2.getContents();
+		HashSet<GdlSentence> set1 = new HashSet<GdlSentence>(state1.getContents());
+		HashSet<GdlSentence> set2 = new HashSet<GdlSentence>(state2.getContents());
 		Iterator<GdlSentence> iterator = set1.iterator();
 		int similar = 0;
 		while(iterator.hasNext())
