@@ -122,17 +122,4 @@ public class MonteCarloPlayer extends SampleGamer {
 		MachineState newstate = getStateMachine().getNextState(state, moves);
 		return depthcharge(role, newstate);
 	}
-
-	// Evaluate the current state. Add in some heuristics here.
-	protected int stateEvaluation(Role role, MachineState state) throws MoveDefinitionException, GoalDefinitionException, TransitionDefinitionException {
-		List<Role> roles = getStateMachine().getRoles();
-		for (Role opp_role : roles) {
-			if (opp_role != getRole()) {
-				List<Move> actions = getStateMachine().getLegalMoves(state, opp_role);
-				List<Move> feasibles = getStateMachine().findActions(opp_role);
-				return (actions.size()/feasibles.size() * 100);
-			}
-		}
-		return 0;
-	}
 }
