@@ -126,26 +126,41 @@ public class AdaptiveHeuristicPlayer extends HeuristicPlayer {
 		//Normalize weights
 		double total = Math.abs(proximityCorr)+Math.abs(movementCorr)+Math.abs(oppMovementCorr)+Math.abs(oppProximityCorr)
 				+Math.abs(oppSimilarityCorr)+Math.abs(similarityCorr);
-		if(total < 0.001) { //This might happen in the last few moves of the game, where you basically don't have much choice in moves
-			proximityCorr = 0.90;
-			similarityCorr = 0.10;
+		if(total < 0.005) { //This might happen in the last few moves of the game, where you basically don't have much choice in moves
+			proximityCorr = 0.50;
+			similarityCorr = 0.15;
+			oppProximityCorr = 0.25;
+			oppSimilarityCorr = 0.10;
+			heuristics.put("goodOppProx", false);
+			heuristics.put("goodOppSim", false);
 			total = 1.0;
 		}
 
 		//Store the weights
-		weightMap.put("proximity", Math.abs(proximityCorr)/total );
-		weightMap.put("movement", Math.abs(movementCorr)/total);
-		weightMap.put("similarityProximity", Math.abs(similarityCorr)/total);
+		double momentum = 0.8;
+		if(weightMap.containsKey("proximity")) {
+			weightMap.put("proximity", momentum*weightMap.get("proximity") + (1-momentum)*Math.abs(proximityCorr)/total );
+			weightMap.put("movement", momentum*weightMap.get("movement") + (1-momentum)*Math.abs(movementCorr)/total);
+			weightMap.put("similarityProximity", momentum*weightMap.get("similarityProximity") + (1-momentum)*Math.abs(similarityCorr)/total);
 
-		weightMap.put("oppMovement", Math.abs(oppMovementCorr)/total);
-		weightMap.put("oppProximity", Math.abs(oppProximityCorr)/total);
-		weightMap.put("oppSimilarityProximity", Math.abs(oppSimilarityCorr)/total);
+			weightMap.put("oppMovement", momentum*weightMap.get("oppMovement") + (1-momentum)*Math.abs(oppMovementCorr)/total);
+			weightMap.put("oppProximity", momentum*weightMap.get("oppProximity") + (1-momentum)*Math.abs(oppProximityCorr)/total);
+			weightMap.put("oppSimilarityProximity", momentum*weightMap.get("oppSimilarityProximity") + (1-momentum)*Math.abs(oppSimilarityCorr)/total);
+		}else{
+			weightMap.put("proximity", Math.abs(proximityCorr)/total );
+			weightMap.put("movement", Math.abs(movementCorr)/total);
+			weightMap.put("similarityProximity", Math.abs(similarityCorr)/total);
+
+			weightMap.put("oppMovement", Math.abs(oppMovementCorr)/total);
+			weightMap.put("oppProximity", Math.abs(oppProximityCorr)/total);
+			weightMap.put("oppSimilarityProximity", Math.abs(oppSimilarityCorr)/total);
+		}
 
 		logger.log(Level.INFO, "The current heuristics are: " + heuristics);
 		logger.log(Level.INFO, "The current weights are: " + weightMap);
 		logger.log(Level.INFO, "The current model choices are: " + modelChoices);
-		if( System.currentTimeMillis() > timeout )
-			logger.log(Level.WARNING, "TIMEOUT Setup:" + (timeout - System.currentTimeMillis()) +" "+(timeout-finishBy));
+//		if( System.currentTimeMillis() > timeout )
+//			logger.log(Level.WARNING, "TIMEOUT Setup:" + (timeout - System.currentTimeMillis()) +" "+(timeout-finishBy));
 	}
 
 	//Overrides to stop iterative deepening if it does not find a terminal state
