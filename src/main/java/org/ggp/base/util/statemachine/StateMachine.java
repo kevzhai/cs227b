@@ -459,6 +459,14 @@ public abstract class StateMachine
         return state;
     }
 
+    //This depth charge only performs a move if it has time
+  	//This helps prevent timeouts on very long games with relatively low play clocks
+	public MachineState performSafeDepthCharge(MachineState state, long timeout) throws TransitionDefinitionException, MoveDefinitionException {
+	    while(!isTerminal(state) && System.currentTimeMillis() < timeout)
+	        state = getNextStateDestructively(state, getRandomJointMove(state));
+	    return state;
+	}
+
     public void getAverageDiscountedScoresFromRepeatedDepthCharges(final MachineState state, final double[] avgScores, final double[] avgDepth, final double discountFactor, final int repetitions) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException {
         avgDepth[0] = 0;
         for (int j = 0; j < avgScores.length; j++) {
