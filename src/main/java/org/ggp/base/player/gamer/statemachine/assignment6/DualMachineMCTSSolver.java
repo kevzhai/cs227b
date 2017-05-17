@@ -44,6 +44,8 @@ public class DualMachineMCTSSolver extends SampleGamer {
 	//Number of extra threads to run in parallel.
 	private final int numThreads = 0;
 
+	private boolean useDual = false;
+
 	//Other variables used throughout the gamer.
 	private StateMachine theMachine;
 	private ArrayList<StateMachine> extraMachines;
@@ -78,6 +80,7 @@ public class DualMachineMCTSSolver extends SampleGamer {
 
 	public StateMachine getBackupStateMachine() {
     	return new CachedStateMachine(new ProverStateMachine());
+//		return new CachedStateMachine(new SamplePropNetStateMachine());
     }
 
 
@@ -98,18 +101,19 @@ public class DualMachineMCTSSolver extends SampleGamer {
 
 		int propCharges = 0;
 		int proveCharges = 0;
-		long tempFinishBy = (long) Math.min(finishBy, System.currentTimeMillis() + (finishBy - start)*0.10 );
-		while(System.currentTimeMillis() < tempFinishBy) {
-			theMachine.performSafeDepthCharge(getCurrentState(), tempFinishBy);
-			propCharges++;
-		}
+		if(useDual){
+			long tempFinishBy = (long) Math.min(finishBy, System.currentTimeMillis() + (finishBy - start)*0.10 );
+			while(System.currentTimeMillis() < tempFinishBy) {
+				theMachine.performSafeDepthCharge(getCurrentState(), tempFinishBy);
+				propCharges++;
+			}
 
-		tempFinishBy = (long) Math.min(finishBy, System.currentTimeMillis() + (finishBy - start)*0.10 );
-		while(System.currentTimeMillis() < tempFinishBy) {
-			backupMachine.performSafeDepthCharge(getCurrentState(), tempFinishBy);
-			proveCharges++;
+			tempFinishBy = (long) Math.min(finishBy, System.currentTimeMillis() + (finishBy - start)*0.10 );
+			while(System.currentTimeMillis() < tempFinishBy) {
+				backupMachine.performSafeDepthCharge(getCurrentState(), tempFinishBy);
+				proveCharges++;
+			}
 		}
-
 		boolean useProp = true;
 		if(proveCharges > propCharges) {
 			useProp = false;
@@ -324,21 +328,27 @@ public class DualMachineMCTSSolver extends SampleGamer {
 		if(node.isMax)
 			logger.log(Level.WARNING, "Error. Should only simulate on the Max Nodes");
 
-		SimulationThreadV2 thread = new SimulationThreadV2(node, theMachine, finishBy, useWinRatio || !useMiniMax, role, useWinRatio);
-		ArrayList<SimulationThreadV2> threads = new ArrayList<SimulationThreadV2>();
-		for(StateMachine machine: extraMachines)
-			threads.add(new SimulationThreadV2(node, machine, finishBy, useWinRatio || !useMiniMax, role, useWinRatio));
-		while(thread.isAlive()){
-			//Wait
-		}
-
-		backPropagate(node, thread.result, false);
-
-		for(SimulationThreadV2 thr: threads) {
-			while(thr.isAlive()){
-				//wait
+		if(extraMachines.size() > 0) {
+			SimulationThreadV2 thread = new SimulationThreadV2(node, theMachine, finishBy, useWinRatio || !useMiniMax, role, useWinRatio);
+			ArrayList<SimulationThreadV2> threads = new ArrayList<SimulationThreadV2>();
+			for(StateMachine machine: extraMachines)
+				threads.add(new SimulationThreadV2(node, machine, finishBy, useWinRatio || !useMiniMax, role, useWinRatio));
+			while(thread.isAlive()){
+				//Wait
 			}
-			backPropagate(node, thr.result, false);
+			backPropagate(node, thread.result, false);
+
+			for(SimulationThreadV2 thr: threads) {
+				while(thr.isAlive()){
+					//wait
+				}
+				backPropagate(node, thr.result, false);
+			}
+		} else {
+			MachineState terminal = node.state;
+			terminal = theMachine.performSafeDepthCharge(node.state.clone(), finishBy);
+			double[] result = getResult(terminal);
+			backPropagate(node, result, false);
 		}
 	}
 
@@ -393,6 +403,55 @@ public class DualMachineMCTSSolver extends SampleGamer {
 		node.update(scores);
 		if(node.parent != null)
 			backPropagate(node.parent, scores, checkExploration);
+	}
+
+	//Averages ALL opponent score.
+	//Might be better to use MAX instead of Average for >2P games.
+	public double avgOpponentScore(MachineState state) throws GoalDefinitionException {
+		double result = 0;
+		if(roles.size() > 1) {
+			for(Role curRole: roles)
+				if(!curRole.equals(role))
+					result += theMachine.findReward(curRole, state);
+//						result = Math.max(result, theMachine.findReward(curRole, state));
+			result /= (roles.size()-1);
+		}
+		return result;
+	}
+
+	public double[] getResult(MachineState terminal) throws GoalDefinitionException {
+		double[] result = new double[2];
+		result[0] = theMachine.findReward(role, terminal);
+
+		/* For a small speedup, we only compute this if we want the win ratio (need both scores)
+		 * or if we want to use the greedy opponent model (also need both scores).
+		 * This is unused for the minimax and terminal score choices. */
+		if(useWinRatio || !useMiniMax)
+			result[1] = avgOpponentScore(terminal);
+
+		//Calculate whether the game was won or not
+		if(useWinRatio) {
+			if(roles.size() == 1){ //If this is a 1P game, winning means a score of >90.
+				if(result[0] < 90)
+					result[0] = 0.0;
+				if(result[0] > 90)
+					result[0] = 100.0;
+			} else{  //If this is a 2P game, winning means a score higher than the opponent's.
+				if(Math.abs(result[0] - result[1]) < 0.1) { //This is because we are storing in doubles
+					result[0] = 50.0;
+					result[1] = 50.0;
+				}
+				else if(result[0] > result[1]) {
+					result[0] = 100.0;
+					result[1] = 0.0;
+				} else {
+					result[0] = 0.0;
+					result[1] = 100.0;
+				}
+			}
+		}
+
+		return result;
 	}
 
 }
