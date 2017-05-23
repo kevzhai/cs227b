@@ -63,7 +63,7 @@ public class SamplePropNetStateMachine extends StateMachine {
      */
     @Override
     public boolean isTerminal(MachineState state) {
-    	markbases(state, propNet);
+    	markBases(state, propNet);
     	return propmarkp(propNet.getTerminalProposition());
     }
 
@@ -77,7 +77,7 @@ public class SamplePropNetStateMachine extends StateMachine {
     @Override
     public int getGoal(MachineState state, Role role)
             throws GoalDefinitionException {
-    	markbases(state, propNet);
+    	markBases(state, propNet);
     	Set<Proposition> rewards = propNet.getGoalPropositions().get(role);
     	for (Proposition p : rewards) {
       		if (propmarkp(p)) {
@@ -107,7 +107,7 @@ public class SamplePropNetStateMachine extends StateMachine {
      */
     @Override
     public MachineState getInitialState() {
-    	clearpropnet(propNet);
+    	clearPropnet(propNet);
     	Proposition init = propNet.getInitProposition();
     	if(init != null)
     		init.setValue(true);
@@ -133,7 +133,7 @@ public class SamplePropNetStateMachine extends StateMachine {
     @Override
     public List<Move> getLegalMoves(MachineState state, Role role)
             throws MoveDefinitionException {
-        markbases(state, propNet);
+        markBases(state, propNet);
         Set<Proposition> legals = propNet.getLegalPropositions().get(role);
         List<Move> actions = new ArrayList<Move>();
         for (Proposition p : legals) {
@@ -152,7 +152,7 @@ public class SamplePropNetStateMachine extends StateMachine {
     public MachineState getNextState(MachineState state, List<Move> moves)
             throws TransitionDefinitionException {
         markactions(moves, propNet);
-        markbases(state, propNet);
+        markBases(state, propNet);
         Map<GdlSentence, Proposition> bases = propNet.getBasePropositions();
         Set<GdlSentence> nextState = new HashSet<GdlSentence>();
         for (GdlSentence gs : bases.keySet()) {
@@ -269,8 +269,8 @@ public class SamplePropNetStateMachine extends StateMachine {
         return new MachineState(contents);
     }
 
-    private void markbases (MachineState state, PropNet propNet) {
-    	clearpropnet(propNet); // sets everything to false
+    private void markBases (MachineState state, PropNet propNet) {
+    	clearPropnet(propNet);
     	Map<GdlSentence, Proposition> props = propNet.getBasePropositions();
     	Set<GdlSentence> stateContents = state.getContents();
     	for (GdlSentence gs : stateContents) {
@@ -281,15 +281,19 @@ public class SamplePropNetStateMachine extends StateMachine {
    private void markactions (List<Move> moves, PropNet propNet) {
 	 Map<GdlSentence, Proposition> props = propNet.getInputPropositions();
 	 List<GdlSentence> toDo = toDoes(moves);
-	 for (GdlSentence gs : props.keySet()) {
-		 props.get(gs).setValue(false);
+
+	 //basically do a reset first
+	 for (GdlSentence sentence : props.keySet()) {
+		 props.get(sentence).setValue(false);
 	 }
+
+	 //set inputs true
 	 for (GdlSentence move : toDo) {
 		 props.get(move).setValue(true);
 	 }
    }
 
-   private void clearpropnet (PropNet propNet) {
+   private void clearPropnet (PropNet propNet) {
 	   Proposition init = propNet.getInitProposition();
 	   if(init != null)
 		   init.setValue(false);
