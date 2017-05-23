@@ -109,7 +109,8 @@ public class SamplePropNetStateMachine extends StateMachine {
     public MachineState getInitialState() {
     	clearpropnet(propNet);
     	Proposition init = propNet.getInitProposition();
-        init.setValue(true);
+    	if(init != null)
+    		init.setValue(true);
     	return getStateFromBase();
     }
 
@@ -150,10 +151,8 @@ public class SamplePropNetStateMachine extends StateMachine {
     @Override
     public MachineState getNextState(MachineState state, List<Move> moves)
             throws TransitionDefinitionException {
-//    	clearpropnet(propNet);
         markactions(moves, propNet);
         markbases(state, propNet);
-//        return getStateFromBase();
         Map<GdlSentence, Proposition> bases = propNet.getBasePropositions();
         Set<GdlSentence> nextState = new HashSet<GdlSentence>();
         for (GdlSentence gs : bases.keySet()) {
@@ -292,30 +291,30 @@ public class SamplePropNetStateMachine extends StateMachine {
 
    private void clearpropnet (PropNet propNet) {
 	   Proposition init = propNet.getInitProposition();
-       init.setValue(false);
+	   if(init != null)
+		   init.setValue(false);
 	   Map<GdlSentence, Proposition> props = propNet.getBasePropositions();
 	   for (GdlSentence gs : props.keySet()) {
 		   props.get(gs).setValue(false);
 	   }
   }
 
-   /* New functions here */
    public boolean propmarkp (Component cp) {
-	   if (cp.getInputs().size() == 1 && cp.getSingleInput() instanceof Transition) { // base
+	   if (cp.getInputs().size() == 1 && cp.getSingleInput() instanceof Transition) {
 		   return cp.getValue();
-	   } else if (cp instanceof Not) { // negation
+	   } else if (cp instanceof Not) {
 		   return propmarknegation(cp);
-	   } else if (cp instanceof Or) { // disjunction
+	   } else if (cp instanceof Or) {
 		   return propmarkdisjunction(cp);
-	   } else if (cp instanceof And) { // conjunction
+	   } else if (cp instanceof And) {
 		   return propmarkconjunction(cp);
-	   } else if (cp instanceof Constant) { // constant
+	   } else if (cp instanceof Constant) {
 		   return cp.getValue();
-	   } else if (((Proposition) cp).getName().getName().getValue().equals("does")) { // input
+	   } else if (((Proposition) cp).getName().getName().getValue().equals("does")) {
 		   return cp.getValue();
-	   } else if((((Proposition) cp).getName().getName().getValue().toUpperCase().equals("INIT"))) { // init
+	   } else if((((Proposition) cp).getName().getName().getValue().toUpperCase().equals("INIT"))) {
 		   return cp.getValue();
-	   } else if (cp.getInputs().size() == 1) { // view
+	   } else if (cp.getInputs().size() == 1) {
 		   return propmarkp(cp.getSingleInput());
 	   } else {
 		   return false;
